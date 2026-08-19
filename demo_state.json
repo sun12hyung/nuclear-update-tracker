@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-08-19T07:25:56+00:00",
+  "guides": {
+    "1.261": {
+      "guide_number": "1.261",
+      "title": "Guidance for Technology-Inclusive Risk Informed Change Evaluation",
+      "revision": "1",
+      "issue_date": "08/2026",
+      "additional_info": "Revised guidance",
+      "document_url": "https://www.nrc.gov/docs/ML26200A777.pdf",
+      "source_url": "https://www.nrc.gov/reading-rm/doc-collections/reg-guides/power-reactors/rg/division-1/division-1-261",
+      "fingerprint": "c870627159d461c63c137d47e3c1a6f461ac796f563c752106fe32ae3046de5f"
+    },
+    "1.262": {
+      "guide_number": "1.262",
+      "title": "ASME Code Cases Approved for Use Without Conditions",
+      "revision": "0",
+      "issue_date": "07/2025",
+      "additional_info": "Effective Date: January 26, 2026",
+      "document_url": "https://www.nrc.gov/docs/ML25001A001.pdf",
+      "source_url": "https://www.nrc.gov/reading-rm/doc-collections/reg-guides/power-reactors/rg/division-1/division-1-261",
+      "fingerprint": "e44acfb4136edbfb376b658d4b53f2319d082b0387ad9e6f72304713367bb9a3"
+    },
+    "1.263": {
+      "guide_number": "1.263",
+      "title": "Comprehensive Risk Metrics",
+      "revision": "DG",
+      "issue_date": "08/2026",
+      "additional_info": "DG-1443",
+      "document_url": "https://www.nrc.gov/docs/ML26220A003.pdf",
+      "source_url": "https://www.nrc.gov/reading-rm/doc-collections/reg-guides/power-reactors/rg/division-1/division-1-261",
+      "fingerprint": "22ec7258a4ad0cf0d1bf798594e927d82add7b98e8e63eb1f0c5691e70362374"
+    }
+  }
+}
