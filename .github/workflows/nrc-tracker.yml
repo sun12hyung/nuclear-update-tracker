@@ -2,6 +2,9 @@ name: NRC update tracker
 
 on:
   workflow_dispatch:
+  schedule:
+    # 매일 오전 10시(KST)에 자동 확인합니다.
+    - cron: "0 1 * * *"
 
 permissions:
   contents: read
@@ -10,12 +13,22 @@ jobs:
   track:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.10"
           cache: pip
+
+      - name: Restore previous comparison baseline
+        uses: actions/cache@v6
+        with:
+          path: |
+            data/state.json
+            pdf_archive/
+          key: nrc-baseline-${{ github.run_id }}
+          restore-keys: |
+            nrc-baseline-
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -38,7 +51,7 @@ jobs:
           fi
 
       - name: Upload generated state and report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nrc-tracker-result
           path: |
