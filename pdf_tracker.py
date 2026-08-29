@@ -121,12 +121,12 @@ def process_documents(guides: Dict[str, Guide], archive_dir: Path) -> list[dict]
             continue
 
         previous = old_documents.get(number)
-        if previous and previous.get("document_url") == guide.document_url:
-            results.append({"guide": number, "status": "UNCHANGED", "sha256": previous.get("sha256")})
-            continue
-
         content = download_pdf(guide.document_url)
         digest = hashlib.sha256(content).hexdigest()
+        if previous and previous.get("sha256") == digest:
+            results.append({"guide": number, "status": "UNCHANGED", "sha256": digest})
+            continue
+
         version = safe_name(f"{guide.revision or 'unknown'}_{guide.issue_date or digest[:8]}")
         document_dir = archive_dir / safe_name(number)
         document_dir.mkdir(parents=True, exist_ok=True)
@@ -172,6 +172,7 @@ def process_documents(guides: Dict[str, Guide], archive_dir: Path) -> list[dict]
                 )
                 result["section_diff_path"] = str(section_diff_path)
                 result["section_changes"] = len(section_changes)
+                result["section_change_items"] = section_changes
 
         new_documents[number] = {
             "document_url": guide.document_url,

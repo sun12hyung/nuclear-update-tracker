@@ -53,3 +53,5 @@ python tracker.py --bootstrap --pdf-archive pdf_archive
 각 Regulatory Guide PDF를 `pdf_archive/<문서번호>/`에 버전별로 보관하고, `pypdf`로 추출한 본문을 함께 저장합니다. 이후 PDF 링크가 바뀌면 이전 텍스트와 새 텍스트의 unified diff를 생성합니다. GitHub Actions 결과물에도 PDF, 추출 텍스트, 비교 파일이 포함됩니다.
 
 추출된 본문은 장·절 제목을 기준으로 다시 나누어 `*.sections.json`에 저장합니다. 새 버전에서는 절별로 `ADDED / REMOVED / MODIFIED`를 판정하므로, 긴 PDF 전체 diff보다 실제로 검토해야 할 부분을 빠르게 찾을 수 있습니다.
+
+매 실행마다 PDF를 다시 내려받아 SHA-256을 확인하므로 NRC가 같은 주소의 파일을 교체해도 변경을 감지합니다. `reports/nrc_summary_*.md`에는 변경된 문서와 장·절을 `추가 / 삭제 / 수정`으로 바꾼 간단한 한국어 요약이 생성됩니다.

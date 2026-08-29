@@ -232,11 +232,15 @@ def run(url: str, state_path: Path, reports_dir: Path, html_file: Optional[Path]
 
     if pdf_archive is not None:
         from pdf_tracker import make_pdf_report, process_documents
+        from summary_report import make_change_summary
 
         pdf_results = process_documents(current, pdf_archive)
         pdf_report_path = reports_dir / f"nrc_pdf_{timestamp}.md"
         pdf_report_path.write_text(make_pdf_report(pdf_results), encoding="utf-8")
+        summary_report_path = reports_dir / f"nrc_summary_{timestamp}.md"
+        summary_report_path.write_text(make_change_summary(pdf_results), encoding="utf-8")
         print(f"PDF 보고서: {pdf_report_path}")
+        print(f"핵심 요약: {summary_report_path}")
     save_state(state_path, current, checked_at)
 
     print(f"수집: {len(current)}개")

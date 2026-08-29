@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import hashlib
+import json
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -52,6 +54,31 @@ class TrackerTests(unittest.TestCase):
         changes = pdf_tracker.compare_sections(before, after)
         self.assertIn({"type": "MODIFIED", "title": "A. INTRODUCTION"}, changes)
         self.assertIn({"type": "ADDED", "title": "C. CONCLUSION"}, changes)
+
+    @patch("pdf_tracker.extract_pdf_text", return_value="A. INTRODUCTION\nNew text")
+    @patch("pdf_tracker.download_pdf", return_value=b"%PDF-new-content")
+    def test_same_url_pdf_replacement_is_detected(self, _mock_download, _mock_extract):
+        guide = tracker.Guide(
+            guide_number="1.261",
+            title="Example",
+            revision="0",
+            issue_date="08/2026",
+            additional_info="",
+            document_url="https://www.nrc.gov/example.pdf",
+            source_url=URL,
+        )
+        with tempfile.TemporaryDirectory() as d:
+            archive = Path(d)
+            (archive / "manifest.json").write_text(json.dumps({
+                "documents": {
+                    "1.261": {
+                        "document_url": guide.document_url,
+                        "sha256": hashlib.sha256(b"%PDF-old-content").hexdigest(),
+                    }
+                }
+            }))
+            results = pdf_tracker.process_documents({"1.261": guide}, archive)
+        self.assertEqual(results[0]["status"], "PDF_CHANGED")
 
 if __name__ == "__main__":
     unittest.main()
