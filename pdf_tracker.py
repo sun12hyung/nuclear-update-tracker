@@ -13,6 +13,10 @@ from pypdf import PdfReader
 
 from tracker import Guide
 
+SECTION_RE = re.compile(
+    r"^(?:(?:[A-Z]|\d+(?:\.\d+)*)[.)]?\s+)?[A-Z][A-Z0-9 ,/&()'\-]{4,}$"
+)
+
 
 def safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("_")
@@ -55,6 +59,48 @@ def text_diff(before: str, after: str, context: int = 3) -> str:
     )
 
 
+def split_sections(text: str) -> list[dict]:
+    sections = []
+    current = {"title": "FRONT MATTER", "lines": []}
+    for raw_line in text.splitlines():
+        line = " ".join(raw_line.split())
+        is_page_marker = line.startswith("--- PAGE ")
+        is_heading = bool(SECTION_RE.fullmatch(line)) and len(line) <= 120
+        if not is_page_marker and is_heading:
+            if current["lines"]:
+                body = "\n".join(current["lines"]).strip()
+                sections.append({
+                    "title": current["title"],
+                    "text": body,
+                    "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+                })
+            current = {"title": line, "lines": []}
+        else:
+            current["lines"].append(raw_line)
+    if current["lines"]:
+        body = "\n".join(current["lines"]).strip()
+        sections.append({
+            "title": current["title"],
+            "text": body,
+            "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+        })
+    return [section for section in sections if section["text"]]
+
+
+def compare_sections(before: list[dict], after: list[dict]) -> list[dict]:
+    old = {section["title"]: section for section in before}
+    new = {section["title"]: section for section in after}
+    changes = []
+    for title in new.keys() - old.keys():
+        changes.append({"type": "ADDED", "title": title})
+    for title in old.keys() - new.keys():
+        changes.append({"type": "REMOVED", "title": title})
+    for title in old.keys() & new.keys():
+        if old[title]["sha256"] != new[title]["sha256"]:
+            changes.append({"type": "MODIFIED", "title": title})
+    return sorted(changes, key=lambda item: (item["title"], item["type"]))
+
+
 def load_manifest(path: Path) -> dict:
     if not path.exists():
         return {"documents": {}}
@@ -89,6 +135,11 @@ def process_documents(guides: Dict[str, Guide], archive_dir: Path) -> list[dict]
         pdf_path.write_bytes(content)
         text = extract_pdf_text(pdf_path)
         text_path.write_text(text, encoding="utf-8")
+        sections = split_sections(text)
+        sections_path = pdf_path.with_suffix(".sections.json")
+        sections_path.write_text(
+            json.dumps(sections, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
         result = {
             "guide": number,
@@ -96,7 +147,9 @@ def process_documents(guides: Dict[str, Guide], archive_dir: Path) -> list[dict]
             "sha256": digest,
             "pdf_path": str(pdf_path),
             "text_path": str(text_path),
+            "sections_path": str(sections_path),
             "characters": len(text),
+            "sections": len(sections),
         }
         if previous and previous.get("text_path"):
             old_text_path = Path(previous["text_path"])
@@ -106,12 +159,26 @@ def process_documents(guides: Dict[str, Guide], archive_dir: Path) -> list[dict]
                 diff_path.write_text(diff, encoding="utf-8")
                 result["diff_path"] = str(diff_path)
                 result["diff_lines"] = len(diff.splitlines())
+        if previous and previous.get("sections_path"):
+            old_sections_path = Path(previous["sections_path"])
+            if old_sections_path.exists():
+                section_changes = compare_sections(
+                    json.loads(old_sections_path.read_text(encoding="utf-8")), sections
+                )
+                section_diff_path = document_dir / f"section_diff_{digest[:12]}.json"
+                section_diff_path.write_text(
+                    json.dumps(section_changes, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                result["section_diff_path"] = str(section_diff_path)
+                result["section_changes"] = len(section_changes)
 
         new_documents[number] = {
             "document_url": guide.document_url,
             "sha256": digest,
             "pdf_path": str(pdf_path),
             "text_path": str(text_path),
+            "sections_path": str(sections_path),
             "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         }
         results.append(result)
@@ -131,9 +198,16 @@ def make_pdf_report(results: list[dict]) -> str:
             lines += [f"- 사유: {item['reason']}"]
         if item.get("characters") is not None:
             lines += [f"- 추출된 글자 수: {item['characters']:,}"]
+        if item.get("sections") is not None:
+            lines += [f"- 인식된 장·절 수: {item['sections']}"]
         if item.get("sha256"):
             lines += [f"- PDF SHA-256: `{item['sha256']}`"]
         if item.get("diff_path"):
             lines += [f"- 본문 차이 파일: `{item['diff_path']}`", f"- diff 줄 수: {item['diff_lines']}"]
+        if item.get("section_diff_path"):
+            lines += [
+                f"- 절별 비교 파일: `{item['section_diff_path']}`",
+                f"- 변경된 장·절 수: {item['section_changes']}",
+            ]
         lines.append("")
     return "\n".join(lines)

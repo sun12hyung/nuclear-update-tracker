@@ -46,5 +46,12 @@ class TrackerTests(unittest.TestCase):
     def test_safe_pdf_filename(self):
         self.assertEqual(pdf_tracker.safe_name("DG / 08/2026"), "DG_08_2026")
 
+    def test_split_and_compare_sections(self):
+        before = pdf_tracker.split_sections("A. INTRODUCTION\nOld text\nB. DISCUSSION\nSame")
+        after = pdf_tracker.split_sections("A. INTRODUCTION\nNew text\nB. DISCUSSION\nSame\nC. CONCLUSION\nAdded")
+        changes = pdf_tracker.compare_sections(before, after)
+        self.assertIn({"type": "MODIFIED", "title": "A. INTRODUCTION"}, changes)
+        self.assertIn({"type": "ADDED", "title": "C. CONCLUSION"}, changes)
+
 if __name__ == "__main__":
     unittest.main()
