@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import tracker
+import pdf_tracker
 
 ROOT = Path(__file__).parent
 URL = "https://www.nrc.gov/example"
@@ -36,6 +37,14 @@ class TrackerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "HTTP 403/Akamai"):
             tracker.fetch(URL)
+
+    def test_pdf_text_diff(self):
+        diff = pdf_tracker.text_diff("A\nold requirement", "A\nnew requirement")
+        self.assertIn("-old requirement", diff)
+        self.assertIn("+new requirement", diff)
+
+    def test_safe_pdf_filename(self):
+        self.assertEqual(pdf_tracker.safe_name("DG / 08/2026"), "DG_08_2026")
 
 if __name__ == "__main__":
     unittest.main()

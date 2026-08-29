@@ -40,3 +40,11 @@ NRC는 일부 지역·클라우드 IP를 Akamai에서 차단하여 같은 공식
 - 로컬에서 403이면 브라우저로 페이지를 HTML로 저장한 뒤 python tracker.py --html-file 저장파일.html로 처리할 수 있습니다.
 - .github/workflows/nrc-tracker.yml은 GitHub Actions 환경에서 수동 검증할 수 있는 읽기 전용 워크플로입니다.
 - Actions 탭에서 NRC update tracker를 실행하면 결과를 nrc-tracker-result artifact로 내려받을 수 있습니다.
+
+## PDF 본문 수집과 비교
+
+```bash
+python tracker.py --bootstrap --pdf-archive pdf_archive
+```
+
+각 Regulatory Guide PDF를 `pdf_archive/<문서번호>/`에 버전별로 보관하고, `pypdf`로 추출한 본문을 함께 저장합니다. 이후 PDF 링크가 바뀌면 이전 텍스트와 새 텍스트의 unified diff를 생성합니다. GitHub Actions 결과물에도 PDF, 추출 텍스트, 비교 파일이 포함됩니다.

@@ -214,7 +214,8 @@ def make_report(changes: List[dict], old_checked_at: Optional[str], checked_at: 
     return "\n".join(out)
 
 
-def run(url: str, state_path: Path, reports_dir: Path, html_file: Optional[Path] = None, bootstrap: bool = False) -> int:
+def run(url: str, state_path: Path, reports_dir: Path, html_file: Optional[Path] = None,
+        bootstrap: bool = False, pdf_archive: Optional[Path] = None) -> int:
     html = html_file.read_text(encoding="utf-8") if html_file else fetch(url)
     current = parse_guides(html, url)
     old = load_state(state_path)
@@ -228,6 +229,14 @@ def run(url: str, state_path: Path, reports_dir: Path, html_file: Optional[Path]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     report_path = reports_dir / f"nrc_update_{timestamp}.md"
     report_path.write_text(make_report(changes, old.get("checked_at"), checked_at, url), encoding="utf-8")
+
+    if pdf_archive is not None:
+        from pdf_tracker import make_pdf_report, process_documents
+
+        pdf_results = process_documents(current, pdf_archive)
+        pdf_report_path = reports_dir / f"nrc_pdf_{timestamp}.md"
+        pdf_report_path.write_text(make_pdf_report(pdf_results), encoding="utf-8")
+        print(f"PDF 보고서: {pdf_report_path}")
     save_state(state_path, current, checked_at)
 
     print(f"수집: {len(current)}개")
@@ -244,10 +253,13 @@ def main() -> int:
     p.add_argument("--reports", default="reports")
     p.add_argument("--html-file", help="테스트/오프라인용 HTML 파일")
     p.add_argument("--bootstrap", action="store_true", help="최초 실행 시 현재 상태를 기준선으로만 저장")
+    p.add_argument("--pdf-archive", default=None, help="PDF와 추출 텍스트를 버전별로 저장할 폴더")
     args = p.parse_args()
 
     try:
-        return run(args.url, Path(args.state), Path(args.reports), Path(args.html_file) if args.html_file else None, args.bootstrap)
+        return run(args.url, Path(args.state), Path(args.reports),
+                   Path(args.html_file) if args.html_file else None, args.bootstrap,
+                   Path(args.pdf_archive) if args.pdf_archive else None)
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
