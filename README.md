@@ -31,6 +31,7 @@ source .venv/bin/activate
 
 
 pip install -r requirements.txt
+```
 
 ## NRC 403 오류와 자동 실행
 
@@ -38,8 +39,10 @@ NRC는 일부 지역·클라우드 IP를 Akamai에서 차단하여 같은 공식
 
 - 로컬에서 접속되면 기존 명령을 그대로 사용합니다.
 - 로컬에서 403이면 브라우저로 페이지를 HTML로 저장한 뒤 python tracker.py --html-file 저장파일.html로 처리할 수 있습니다.
-- .github/workflows/nrc-tracker.yml은 GitHub Actions 환경에서 수동 검증할 수 있는 읽기 전용 워크플로입니다.
-- Actions 탭에서 NRC update tracker를 실행하면 결과를 nrc-tracker-result artifact로 내려받을 수 있습니다.
+- `.github/workflows/nrc-tracker.yml`은 매일 오전 10시(KST)에 자동 실행되며, Actions 탭에서 수동으로도 실행할 수 있습니다.
+- 이전 수집 상태와 PDF 보관본은 GitHub Actions 캐시에 이어서 저장하므로, 다음 실행부터 실제 변경 여부를 비교합니다.
+- 실행 결과는 `nrc-tracker-result` artifact로 내려받을 수 있습니다.
+- GitHub Actions 구성요소는 Node.js 24 호환 버전을 사용합니다.
 
 ## PDF 본문 수집과 비교
 
