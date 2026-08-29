@@ -28,9 +28,9 @@ jobs:
         run: |
           set +e
           if [[ -f data/state.json ]]; then
-            python tracker.py
+            python tracker.py --pdf-archive pdf_archive
           else
-            python tracker.py --bootstrap
+            python tracker.py --bootstrap --pdf-archive pdf_archive
           fi
           code=$?
           if [[ $code -ne 0 && $code -ne 2 ]]; then
@@ -44,3 +44,4 @@ jobs:
           path: |
             data/state.json
             reports/
+            pdf_archive/
