@@ -15,6 +15,8 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 GUIDE_RE = re.compile(r"^1\.\d{1,3}$")
 DEFAULT_URL = "https://www.nrc.gov/reading-rm/doc-collections/reg-guides/power-reactors/rg/division-1/division-1-261"
@@ -87,8 +89,26 @@ def parse_guides(html: str, source_url: str) -> Dict[str, Guide]:
 
 
 def fetch(url: str, timeout: int = 30) -> str:
-    headers = {"User-Agent": "NuclearRegUpdateTracker/0.1 (+personal research project)"}
-    response = requests.get(url, headers=headers, timeout=timeout)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; NuclearRegUpdateTracker/0.2; +https://github.com/sun12hyung/nuclear-update-tracker)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    retry = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=("GET",),
+    )
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    response = session.get(url, headers=headers, timeout=timeout)
+    if response.status_code == 403:
+        raise RuntimeError(
+            "NRC 서버가 이 네트워크의 요청을 거부했습니다(HTTP 403/Akamai). "
+            "주소나 설치 문제는 아닙니다. GitHub Actions에서 다시 실행하거나, "
+            "브라우저로 저장한 HTML을 --html-file 옵션으로 입력하세요."
+        )
     response.raise_for_status()
     return response.text
 
