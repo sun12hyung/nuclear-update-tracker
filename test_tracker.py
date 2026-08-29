@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import tracker
 
@@ -27,6 +28,14 @@ class TrackerTests(unittest.TestCase):
             self.assertEqual(by_guide["1.261"]["type"], "MODIFIED")
             self.assertIn("revision", by_guide["1.261"]["fields"])
             self.assertEqual(by_guide["1.263"]["type"], "NEW")
+
+    @patch("tracker.requests.Session.get")
+    def test_fetch_explains_nrc_403(self, mock_get):
+        response = Mock(status_code=403)
+        mock_get.return_value = response
+
+        with self.assertRaisesRegex(RuntimeError, "HTTP 403/Akamai"):
+            tracker.fetch(URL)
 
 if __name__ == "__main__":
     unittest.main()
